@@ -194,6 +194,7 @@ export default function OneRMTracker() {
   };
 
   const handleChange = (index, field, value) => {
+    value = value === '' ? null : value;
     const updatedWeeks = [...weeks];
     updatedWeeks[index][field] = value;
 
@@ -206,23 +207,23 @@ export default function OneRMTracker() {
         ref = calculate1RM(parseFloat(prevWeek.weight), parseInt(prevWeek.reps)) + 0.1;
       }
 
-      if (field === 'reps' && value) {
+      if (field === 'reps') {
         let weightSuggestion = 0;
         if (useVolume) {
-          weightSuggestion = calculateFromVolume(ref, parseInt(value), 'reps');
+          weightSuggestion = calculateFromVolume(ref, parseInt(value ?? prevWeek.reps), 'reps');
         } else {
-          weightSuggestion = calculateFrom1RM(ref, parseInt(value), 'reps');
+          weightSuggestion = calculateFrom1RM(ref, parseInt(value ?? prevWeek.reps), 'reps');
         }
         let suggestionCheck = calculatePlates(weightSuggestion);
         while (useBarbell && suggestionCheck.mismatch) {
           suggestionCheck = calculatePlates(++weightSuggestion);
         }
         updatedWeeks[index].suggestedWeight = (useBarbell && suggestionCheck.mismatch) ? null : weightSuggestion;
-      } else if (field === 'weight' && value) {
+      } else if (field === 'weight') {
         if (useVolume) {
-          updatedWeeks[index].suggestedReps = calculateFromVolume(ref, parseFloat(value), 'weight');
+          updatedWeeks[index].suggestedReps = calculateFromVolume(ref, parseFloat(value ?? prevWeek.weight), 'weight');
         } else {
-          updatedWeeks[index].suggestedReps = calculateFrom1RM(ref, parseFloat(value), 'weight');
+          updatedWeeks[index].suggestedReps = calculateFrom1RM(ref, parseFloat(value ?? prevWeek.weight), 'weight');
         }
       }
     }
