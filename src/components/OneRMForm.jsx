@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import Switch from '@mui/material/Switch';
 
 export default function OneRMTracker() {
   const [weeks, setWeeks] = useState([
@@ -8,9 +9,14 @@ export default function OneRMTracker() {
   const [useBarbell, setUseBarbell] = useState(false);
   const [barWeight, setBarWeight] = useState(15);
   const [plates, setPlates] = useState("1,2,3,4,5,10,20");
+  const [useVolume, setUseVolume] = useState(false);
 
   const calculate1RM = (weight, reps) => {
     return weight * (1 + reps / 30);
+  };
+
+  const calculateVolume = (weight, reps) => {
+    return weight * reps;
   };
 
   const calculateFrom1RM = (target1RM, value, type) => {
@@ -19,6 +25,10 @@ export default function OneRMTracker() {
     } else {
       return Math.ceil(((target1RM / value) - 1) * 30);
     }
+  };
+
+  const calculateFromVolume = (targetVolume, value, type) => {
+    return Math.ceil(targetVolume / value)
   };
 
   const calculatePlates = (totalWeight) => {
@@ -49,8 +59,8 @@ export default function OneRMTracker() {
 
   const handleAddWeek = () => {
     const lastWeek = weeks[weeks.length - 1];
-    if(!lastWeek) {
-     setWeeks([...weeks, { weight: '', reps: '', suggestedWeight: null, suggestedReps: null }]);
+    if (!lastWeek) {
+      setWeeks([...weeks, { weight: '', reps: '', suggestedWeight: null, suggestedReps: null }]);
       return
     }
     let suggestedWeight = null;
@@ -60,8 +70,13 @@ export default function OneRMTracker() {
     const reps = parseInt(lastWeek.reps);
 
     if (!isNaN(weight) && !isNaN(reps)) {
-      const last1RM = calculate1RM(weight, reps);
-      suggestedWeight = Math.ceil(last1RM + 1);
+      let reference = 0;
+      if (useVolume) {
+        reference = calculateVolume(weight, reps);
+      } else {
+        reference = calculate1RM(weight, reps);
+      }
+      suggestedWeight = Math.ceil(reference + 1);
       let suggestionCheck = calculatePlates(suggestedWeight);
       while (useBarbell && suggestionCheck.mismatch) {
         suggestionCheck = calculatePlates(++suggestedWeight);
@@ -81,17 +96,31 @@ export default function OneRMTracker() {
 
     const prevWeek = weeks[index - 1];
     if (index > 0 && prevWeek && prevWeek.weight && prevWeek.reps) {
-      const last1RM = calculate1RM(parseFloat(prevWeek.weight), parseInt(prevWeek.reps)) + 1;
+      let ref = 0;
+      if (useVolume) {
+        ref = calculateVolume(parseFloat(prevWeek.weight), parseInt(prevWeek.reps)) + 1;
+      } else {
+        ref = calculate1RM(parseFloat(prevWeek.weight), parseInt(prevWeek.reps)) + 1;
+      }
 
       if (field === 'reps' && value) {
-        let weightSuggestion = calculateFrom1RM(last1RM, parseInt(value), 'reps');
+        let weightSuggestion = 0;
+        if(useVolume) {
+          weightSuggestion = calculateFromVolume(ref, parseInt(value), 'reps');
+        } else {
+          weightSuggestion = calculateFrom1RM(ref, parseInt(value), 'reps');
+        }
         let suggestionCheck = calculatePlates(weightSuggestion);
         while (useBarbell && suggestionCheck.mismatch) {
           suggestionCheck = calculatePlates(++weightSuggestion);
         }
         updatedWeeks[index].suggestedWeight = (useBarbell && suggestionCheck.mismatch) ? null : weightSuggestion;
       } else if (field === 'weight' && value) {
-        updatedWeeks[index].suggestedReps = calculateFrom1RM(last1RM, parseFloat(value), 'weight');
+        if (useVolume){
+          updatedWeeks[index].suggestedReps = calculateFromVolume(ref, parseFloat(value), 'weight');
+        } else {
+          updatedWeeks[index].suggestedReps = calculateFrom1RM(ref, parseFloat(value), 'weight');
+        }
       }
     }
 
@@ -101,6 +130,16 @@ export default function OneRMTracker() {
   return (
     <div className="max-w-2xl mx-auto p-4 space-y-6 text-white bg-gray-900 min-h-screen">
       <h1 className="text-xl font-bold text-center">Calculadora de Progressão 1RM</h1>
+      <div className="space-y-2 border p-4 rounded-xl bg-gray-800">
+        <label className="switch flex items-center space-x-2">
+          <span>Priorizar Força</span>
+          <Switch
+            checked={useVolume}
+            onChange={() => setUseVolume(!useVolume)}
+          />
+          <span>Priorizar volume</span>
+        </label>
+      </div>
 
       <div className="space-y-2 border p-4 rounded-xl bg-gray-800">
         <label className="flex items-center space-x-2">
@@ -143,7 +182,7 @@ export default function OneRMTracker() {
 
         return (
           <div key={index} className="border p-4 rounded-xl shadow-sm bg-gray-800 space-y-4">
-            <div className='d-flex justify-content-between' style={{display: "flex", justifyContent: "space-between"}}>
+            <div className='d-flex justify-content-between' style={{ display: "flex", justifyContent: "space-between" }}>
               <h2 className="font-semibold">Semana {index + 1}</h2>
               <button
                 onClick={() => handleRemoveWeek(index)}
@@ -184,6 +223,11 @@ export default function OneRMTracker() {
                   placeholder={week.suggestedReps && !week.reps ? `Sugerido: ${week.suggestedReps} reps` : ''}
                   onChange={(e) => handleChange(index, 'reps', e.target.value)}
                 />
+                {useVolume && (
+                  <>
+                  <p className="text-sm text-gray-300 mt-1">Volume: {calculateVolume(week.weight > 0 ? week.weight :  week.suggestedWeight, week.reps > 0 ? week.reps : week.suggestedReps)}</p>
+                  </>
+                )}
               </div>
             </div>
           </div>
