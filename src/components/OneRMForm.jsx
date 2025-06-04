@@ -153,6 +153,7 @@ export default function OneRMTracker() {
   };
 
   const handleAddWeek = () => {
+    updateCheck(weeks.length - 1, true);
     const lastWeek = weeks[weeks.length - 1];
     if (!lastWeek) {
       setWeeks([...weeks, defaultWeek]);
