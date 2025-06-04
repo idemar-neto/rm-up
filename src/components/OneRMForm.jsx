@@ -16,6 +16,50 @@ export default function OneRMTracker() {
   const [plates, setPlates] = useState("1,2,3,4,5,10,20");
   const [useVolume, setUseVolume] = useState(false);
 
+  const handleSwitchChange = (event) => {
+    setUseVolume(event.target.checked);
+    weeks.forEach((week, index) => {
+      const updatedWeeks = [...weeks];
+      const lastWeek = updatedWeeks[index - 1];
+      if (!lastWeek || !lastWeek.weight || !lastWeek.reps) {
+        return;
+      }
+      const ref = event.target.checked ? calculateVolume(parseFloat(lastWeek.weight), parseInt(lastWeek.reps), parseInt(lastWeek.sets)) : calculate1RM(parseFloat(lastWeek.weight), parseInt(lastWeek.reps));
+      if (isNaN(ref)) {
+        return;
+      }
+      if (index === 0) {
+        updatedWeeks[index].suggestedWeight = null;
+        updatedWeeks[index].suggestedReps = null;
+      }
+      else if (event.target.checked) {
+        if (!isNaN(parseInt(week.weight))){
+          updatedWeeks[index].suggestedReps = calculateFromVolume(ref, parseInt(week.weight), 'weight');
+        }
+        else if (!isNaN(parseFloat(week.reps))){
+          updatedWeeks[index].suggestedWeight = calculateFromVolume(ref, parseInt(week.reps), 'reps');
+        }
+        else {
+          updatedWeeks[index].suggestedWeight = calculateFromVolume(ref+1, parseInt(lastWeek.reps), 'reps');
+          updatedWeeks[index].suggestedReps = calculateFromVolume(ref+1, updatedWeeks[index].suggestedWeight, 'weight');
+        }
+      }
+      else {
+        if (!isNaN(parseFloat(week.reps))) {
+          updatedWeeks[index].suggestedWeight = calculateFrom1RM(ref, parseInt(week.reps), 'reps');
+        }
+        else if (!isNaN(parseInt(week.weight))) {
+          updatedWeeks[index].suggestedReps = calculateFrom1RM(ref, parseInt(week.weight), 'weight');
+        }else {
+          updatedWeeks[index].suggestedWeight = calculateFrom1RM(ref+1, parseInt(lastWeek.reps), 'reps');
+          updatedWeeks[index].suggestedReps = calculateFrom1RM(ref+1, updatedWeeks[index].suggestedWeight, 'weight');
+
+        }
+      }
+      setWeeks(updatedWeeks);
+    });
+  };
+
   const addPlates = (newPlates) => {
     if(isNaN(newPlates) || newPlates.trim() === '') {
       return;
@@ -55,6 +99,12 @@ export default function OneRMTracker() {
   const updateCheck = (index, check) => {
     const updatedWeeks = [...weeks];
     updatedWeeks[index].check = !check;
+    if(updatedWeeks[index].suggestedWeight && !updatedWeeks[index].weight) {
+      updatedWeeks[index].weight = updatedWeeks[index].suggestedWeight;
+    }
+    if(updatedWeeks[index].suggestedReps && !updatedWeeks[index].reps) {
+      updatedWeeks[index].reps = updatedWeeks[index].suggestedReps;
+    }
     setWeeks(updatedWeeks);
   };
 
@@ -122,10 +172,17 @@ export default function OneRMTracker() {
       } else {
         reference = calculate1RM(weight, reps);
       }
-      suggestedWeight = Math.ceil(reference + 1);
-      let suggestionCheck = calculatePlates(suggestedWeight);
-      while (useBarbell && suggestionCheck.mismatch) {
-        suggestionCheck = calculatePlates(++suggestedWeight);
+      suggestedWeight = useVolume ? calculateFromVolume(reference, reps, 'reps') : calculateFrom1RM(reference, reps, 'reps');
+      if(useBarbell) {
+        let suggestionCheck = calculatePlates(suggestedWeight);
+        while (suggestionCheck.mismatch) {
+          suggestionCheck = calculatePlates(++suggestedWeight);
+        }
+      }
+      if (useVolume) {
+        suggestedReps = calculateFromVolume(reference + 1, suggestedWeight, 'weight');
+      } else {
+        suggestedReps = calculateFrom1RM(reference + 1, suggestedWeight, 'weight');
       }
     }
 
@@ -146,7 +203,7 @@ export default function OneRMTracker() {
       if (useVolume) {
         ref = calculateVolume(parseFloat(prevWeek.weight), parseInt(prevWeek.reps), parseInt(prevWeek.sets)) + 1;
       } else {
-        ref = calculate1RM(parseFloat(prevWeek.weight), parseInt(prevWeek.reps)) + 1;
+        ref = calculate1RM(parseFloat(prevWeek.weight), parseInt(prevWeek.reps)) + 0.1;
       }
 
       if (field === 'reps' && value) {
@@ -182,7 +239,7 @@ export default function OneRMTracker() {
           <span>Priorizar Força</span>
           <Switch
             checked={useVolume}
-            onChange={() => setUseVolume(!useVolume)}
+            onChange={(e) => handleSwitchChange(e)}
           />
           <span>Priorizar volume</span>
           <FaDumbbell />
