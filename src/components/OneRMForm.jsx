@@ -284,7 +284,7 @@ export default function OneRMTracker() {
             </div>
             <div>
               <label className="block text-sm mb-1">Anilhas disponíveis:</label>
-              <div className='flex gap-2 mb-2' style={{ width: '100%', scrollbarColor: 'darkblue darkgray' }}>
+              <div className='flex gap-2 mb-2' style={{ width: '100%', overflowY: 'hidden' }}>
                 {plates.split(",").map((plate, index) => {
                   return (
                     <>
@@ -308,6 +308,7 @@ export default function OneRMTracker() {
                     </>
                   )
                 })}
+                <div className='flex align-items-start'>
                 <label
                   onClick={() => { setEditPlate(!editPlate) }}
                   className='cursor-pointer bg-gray-900'
@@ -321,6 +322,7 @@ export default function OneRMTracker() {
                     alignItems: 'center',
                     justifyContent: 'center',
                   }}>{!editPlate ? <FaPencil className='text-white-500'/> : <FaCircleCheck className='text-green-500'/> }</label >
+                </div>
               </div>
               {editPlate && (
                 <>
