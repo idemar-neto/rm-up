@@ -1,4 +1,4 @@
-# 🏋️ Calculadora de Progressão 1RM
+# 🏋️ Calculadora de Progressão
 
 Este projeto é uma calculadora interativa para acompanhar a evolução de força ao longo das semanas na academia, com base no cálculo de 1RM (uma repetição máxima) ou equivalência de volume. O sistema também inclui suporte para barra e anilhas, verificando se o peso informado é viável com os recursos disponíveis.
 
@@ -40,3 +40,6 @@ npm install -D vite @vitejs/plugin-react
 ```bash
 npm run dev
 ```
+
+4. **Acessar pelo vercel**:
+Acesse o [app](https://volume-rm-progression.vercel.app/)
