@@ -1,20 +1,55 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import Switch from '@mui/material/Switch';
 import { FaPencil, FaCalendar, FaCalendarCheck, FaDumbbell, FaHandBackFist, FaTrash, FaCircleCheck, FaCircleMinus } from "react-icons/fa6";
 
 export default function OneRMTracker() {
-  
-  const defaultWeek = { name: null, weight: '', reps: '', sets: '', suggestedWeight: null, suggestedReps: null, editName: true, check: false };
-  
-  const [weeks, setWeeks] = useState([
-    defaultWeek
-  ]);
 
-  const [useBarbell, setUseBarbell] = useState(false);
-  const [editPlate, setEditPlate] = useState(false);
-  const [barWeight, setBarWeight] = useState(15);
-  const [plates, setPlates] = useState("1,2,3,4,5,10,20");
-  const [useVolume, setUseVolume] = useState(false);
+  const defaultWeek = { name: null, weight: '', reps: '', sets: '', suggestedWeight: null, suggestedReps: null, editName: true, check: false };
+
+  const [weeks, setWeeks] = useState(() => {
+    const saved = localStorage.getItem('weeks');
+    return saved ? JSON.parse(saved) : [defaultWeek]
+  });
+
+  const [useBarbell, setUseBarbell] = useState(() => {
+    return localStorage.getItem('useBarbell') === 'true';
+  });
+
+  const [editPlate, setEditPlate] = useState(() => {
+    return localStorage.getItem('editPlate') === 'true';
+  });
+
+  const [barWeight, setBarWeight] = useState(() => {
+    return parseFloat(localStorage.getItem('barWeight')) || 20;
+  });
+  const [plates, setPlates] = useState(() => {
+    return localStorage.getItem('plates') || "1,2,3,4,5,10,20";
+  });
+
+  const [useVolume, setUseVolume] = useState(() => {
+    return localStorage.getItem('useVolume') === 'true';
+  });
+
+  useEffect(() => {
+    localStorage.setItem('weeks', JSON.stringify(weeks));
+  }, [weeks]);
+
+  useEffect(() => {
+    localStorage.setItem('useBarbell', useBarbell);
+  }, [useBarbell]);
+
+  useEffect(() => {
+    localStorage.setItem('barWeight', barWeight);
+  }, [barWeight]);
+
+  useEffect(() => {
+    localStorage.setItem('plates', plates);
+  }, [plates]);
+
+  useEffect(() => {
+    localStorage.setItem('useVolume', useVolume);
+  }, [useVolume]);
+
 
   const handleSwitchChange = (event) => {
     setUseVolume(event.target.checked);
@@ -33,15 +68,15 @@ export default function OneRMTracker() {
         updatedWeeks[index].suggestedReps = null;
       }
       else if (event.target.checked) {
-        if (!isNaN(parseInt(week.weight))){
+        if (!isNaN(parseInt(week.weight))) {
           updatedWeeks[index].suggestedReps = calculateFromVolume(ref, parseInt(week.weight), 'weight');
         }
-        else if (!isNaN(parseFloat(week.reps))){
+        else if (!isNaN(parseFloat(week.reps))) {
           updatedWeeks[index].suggestedWeight = calculateFromVolume(ref, parseInt(week.reps), 'reps');
         }
         else {
-          updatedWeeks[index].suggestedWeight = calculateFromVolume(ref+1, parseInt(lastWeek.reps), 'reps');
-          updatedWeeks[index].suggestedReps = calculateFromVolume(ref+1, updatedWeeks[index].suggestedWeight, 'weight');
+          updatedWeeks[index].suggestedWeight = calculateFromVolume(ref + 1, parseInt(lastWeek.reps), 'reps');
+          updatedWeeks[index].suggestedReps = calculateFromVolume(ref + 1, updatedWeeks[index].suggestedWeight, 'weight');
         }
       }
       else {
@@ -50,9 +85,9 @@ export default function OneRMTracker() {
         }
         else if (!isNaN(parseInt(week.weight))) {
           updatedWeeks[index].suggestedReps = calculateFrom1RM(ref, parseInt(week.weight), 'weight');
-        }else {
-          updatedWeeks[index].suggestedWeight = calculateFrom1RM(ref+1, parseInt(lastWeek.reps), 'reps');
-          updatedWeeks[index].suggestedReps = calculateFrom1RM(ref+1, updatedWeeks[index].suggestedWeight, 'weight');
+        } else {
+          updatedWeeks[index].suggestedWeight = calculateFrom1RM(ref + 1, parseInt(lastWeek.reps), 'reps');
+          updatedWeeks[index].suggestedReps = calculateFrom1RM(ref + 1, updatedWeeks[index].suggestedWeight, 'weight');
 
         }
       }
@@ -61,7 +96,7 @@ export default function OneRMTracker() {
   };
 
   const addPlates = (newPlates) => {
-    if(isNaN(newPlates) || newPlates.trim() === '') {
+    if (isNaN(newPlates) || newPlates.trim() === '') {
       return;
     }
     const currentPlates = plates.split(',').map(p => parseFloat(p.replace(',', '.')));
@@ -71,7 +106,7 @@ export default function OneRMTracker() {
     document.getElementById("add-plate").value = ''; // Clear input after adding
     setEditPlate(false); // Optionally close the edit mode after adding
   };
-  
+
   const removePlate = (index) => {
     const plateList = plates.split(',').map(p => parseFloat(p.replace(',', '.')));
     if (index < 0 || index >= plateList.length) {
@@ -99,10 +134,10 @@ export default function OneRMTracker() {
   const updateCheck = (index, check) => {
     const updatedWeeks = [...weeks];
     updatedWeeks[index].check = !check;
-    if(updatedWeeks[index].suggestedWeight && !updatedWeeks[index].weight) {
+    if (updatedWeeks[index].suggestedWeight && !updatedWeeks[index].weight) {
       updatedWeeks[index].weight = updatedWeeks[index].suggestedWeight;
     }
-    if(updatedWeeks[index].suggestedReps && !updatedWeeks[index].reps) {
+    if (updatedWeeks[index].suggestedReps && !updatedWeeks[index].reps) {
       updatedWeeks[index].reps = updatedWeeks[index].suggestedReps;
     }
     setWeeks(updatedWeeks);
@@ -174,7 +209,7 @@ export default function OneRMTracker() {
         reference = calculate1RM(weight, reps);
       }
       suggestedWeight = useVolume ? calculateFromVolume(reference, reps, 'reps') : calculateFrom1RM(reference, reps, 'reps');
-      if(useBarbell) {
+      if (useBarbell) {
         let suggestionCheck = calculatePlates(suggestedWeight);
         while (suggestionCheck.mismatch) {
           suggestionCheck = calculatePlates(++suggestedWeight);
@@ -288,40 +323,40 @@ export default function OneRMTracker() {
                 {plates.split(",").map((plate, index) => {
                   return (
                     <>
-                    <div className='flex align-items-start' key={index}>
-                      <label
-                      className='bg-gray-900'
-                        style={{
-                          // background: "darkblue",
-                          border: "1px solid white",
-                          borderRadius: "100%",
-                          width: '40px',
-                          height: 'auto',
-                          display: 'flex',
-                          alignItems: 'center',
-                          justifyContent: 'center',
-                        }}>{plate}</label>
-                        { editPlate && (
-                          <FaCircleMinus className='cursor-pointer text-red-500' onClick={() => removePlate(index)}/>
+                      <div className='flex align-items-start' key={index}>
+                        <label
+                          className='bg-gray-900'
+                          style={{
+                            // background: "darkblue",
+                            border: "1px solid white",
+                            borderRadius: "100%",
+                            width: '40px',
+                            height: 'auto',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                          }}>{plate}</label>
+                        {editPlate && (
+                          <FaCircleMinus className='cursor-pointer text-red-500' onClick={() => removePlate(index)} />
                         )}
                       </div>
                     </>
                   )
                 })}
                 <div className='flex align-items-start'>
-                <label
-                  onClick={() => { setEditPlate(!editPlate) }}
-                  className='cursor-pointer bg-gray-900'
-                  style={{
-                    // background: "darkblue",
-                    border: "1px solid white",
-                    borderRadius: "100%",
-                    width: '40px',
-                    height: '40px',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                  }}>{!editPlate ? <FaPencil className='text-white-500'/> : <FaCircleCheck className='text-green-500'/> }</label >
+                  <label
+                    onClick={() => { setEditPlate(!editPlate) }}
+                    className='cursor-pointer bg-gray-900'
+                    style={{
+                      // background: "darkblue",
+                      border: "1px solid white",
+                      borderRadius: "100%",
+                      width: '40px',
+                      height: '40px',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                    }}>{!editPlate ? <FaPencil className='text-white-500' /> : <FaCircleCheck className='text-green-500' />}</label >
                 </div>
               </div>
               {editPlate && (
@@ -333,9 +368,9 @@ export default function OneRMTracker() {
                       type="text"
                       className="w-full p-2 border rounded bg-gray-700 text-white"
                       placeholder={0}
-                      // onChange={(e) => addPlates(e.target.value)}
+                    // onChange={(e) => addPlates(e.target.value)}
                     />
-                    <button style={{width: '50%'}} onClick={() => addPlates(document.getElementById("add-plate").value)}>
+                    <button style={{ width: '50%' }} onClick={() => addPlates(document.getElementById("add-plate").value)}>
                       <FaCircleCheck className="text-green-500 m" />
                     </button>
                   </div>
@@ -359,7 +394,7 @@ export default function OneRMTracker() {
                     onClick={() => { updateCheck(index, week.check) }}
                   >
                     {(week.check || (week.weight && week.reps)) ? (
-                      <> <FaCalendarCheck className="text-green-500" /> </> ) : (
+                      <> <FaCalendarCheck className="text-green-500" /> </>) : (
                       <> <FaCalendar className="text-gray-500" /> </>
                     )}
                   </button>
