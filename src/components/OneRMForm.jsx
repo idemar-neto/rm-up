@@ -97,6 +97,7 @@ export default function OneRMTracker() {
 
   const addPlates = (newPlates) => {
     if (isNaN(newPlates) || newPlates.trim() === '') {
+      setEditPlate(false); // Optionally close the edit mode after adding
       return;
     }
     const currentPlates = plates.split(',').map(p => parseFloat(p.replace(',', '.')));
@@ -132,6 +133,9 @@ export default function OneRMTracker() {
   };
 
   const updateCheck = (index, check) => {
+    if(index <= 0) {
+      return;
+    }
     const updatedWeeks = [...weeks];
     updatedWeeks[index].check = !check;
     if (updatedWeeks[index].suggestedWeight && !updatedWeeks[index].weight) {
@@ -192,7 +196,7 @@ export default function OneRMTracker() {
     const lastWeek = weeks[weeks.length - 1];
     if (!lastWeek) {
       setWeeks([...weeks, defaultWeek]);
-      return
+      return;
     }
     let suggestedWeight = null;
     let suggestedReps = null;
@@ -400,7 +404,7 @@ export default function OneRMTracker() {
                   </button>
                   {!week.editName ? (
                     <>
-                      <h2 className="font-semibold">{week.name ? week.name : "Semana " + (index + 1)}</h2>
+                      <h2 className="font-semibold">{week.name ? week.name : "Semana " + (index === 0 ? "Base" : (index + 1))}</h2>
                     </>) :
                     (
                       <>
@@ -410,7 +414,7 @@ export default function OneRMTracker() {
                           onChange={(e) => editName(index, e.target.value)}
                           onBlur={() => updateEditName(index, week.editName)}
                           onKeyUp={(e => { e.key === 'Enter' && updateEditName(index, week.editName) })}
-                          placeholder={"Semana " + (index + 1)}
+                          placeholder={"Semana " + (index === 0 ? "Base" : (index + 1))}
                         />
                       </>
                     )}
@@ -464,12 +468,12 @@ export default function OneRMTracker() {
                   />
                   {useVolume && (
                     <>
-                      <p className="text-sm text-gray-300 mt-1">Volume: {calculateVolume(week.weight > 0 ? week.weight : week.suggestedWeight, week.reps > 0 ? week.reps : week.suggestedReps)}</p>
+                      <p className="text-sm text-gray-300 mt-1">Volume: {calculateVolume(week.weight > 0 ? week.weight : week.suggestedWeight, week.reps > 0 ? week.reps : week.suggestedReps)} kg</p>
                     </>
                   )}
                   {!useVolume && (
                     <>
-                      <p className="text-sm text-gray-300 mt-1">1RM: {Math.round(calculate1RM(week.weight > 0 ? week.weight : week.suggestedWeight, week.reps > 0 ? week.reps : week.suggestedReps) * 100) / 100}</p>
+                      <p className="text-sm text-gray-300 mt-1">1RM: {Math.round(calculate1RM(week.weight > 0 ? week.weight : week.suggestedWeight, week.reps > 0 ? week.reps : week.suggestedReps) * 100) / 100} kg</p>
                     </>
                   )}
                 </div>
